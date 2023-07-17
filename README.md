@@ -1,3 +1,3 @@
-# gh-go [![GoDoc](https://godoc.org/github.com/rajatgoel/gh-go?status.svg)](https://godoc.org/github.com/rajatgoel/gh-go) [![Actions Status](https://github.com/rajatgoel/gh-go/workflows/build/badge.svg)](https://github.com/rajatgoel/gh-go/actions) [![Actions Status](https://github.com/rajatgoel/gh-go/workflows/lint/badge.svg)](https://github.com/rajatgoel/gh-go/actions) [![Actions Status](https://github.com/rajatgoel/gh-go/workflows/vuln/badge.svg)](https://github.com/rajatgoel/gh-go/actions)
+# dynovault [![GoDoc](https://godoc.org/github.com/rajatgoel/dynovault?status.svg)](https://godoc.org/github.com/rajatgoel/dynovault) [![Actions Status](https://github.com/rajatgoel/dynovault/workflows/build/badge.svg)](https://github.com/rajatgoel/dynovault/actions) [![Actions Status](https://github.com/rajatgoel/dynovault/workflows/lint/badge.svg)](https://github.com/rajatgoel/dynovault/actions) [![Actions Status](https://github.com/rajatgoel/dynovault/workflows/vuln/badge.svg)](https://github.com/rajatgoel/dynovault/actions)
 
-Github workflows for Go
+DDB API over generic key-value store
