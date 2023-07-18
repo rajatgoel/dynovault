@@ -6,6 +6,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
-func DeleteTable(ctx context.Context, input *dynamodb.DeleteTableInput) (*dynamodb.DeleteTableOutput, error) {
+func DeleteTable(ctx context.Context, s *state, input *dynamodb.DeleteTableInput) (*dynamodb.DeleteTableOutput, error) {
 	return &dynamodb.DeleteTableOutput{}, nil
 }
