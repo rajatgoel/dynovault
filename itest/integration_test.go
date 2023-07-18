@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/stretchr/testify/require"
 
-	"rajatgoel/dynovault/handler"
+	"github.com/rajatgoel/dynovault/handler"
 )
 
 func getDDBService(t *testing.T) *dynamodb.DynamoDB {
@@ -26,7 +26,6 @@ func getDDBService(t *testing.T) *dynamodb.DynamoDB {
 			"SECRET_KEY",
 			"TOKEN",
 		),
-		MaxRetries: aws.Int(1),
 	}
 
 	sess, err := session.NewSession(cfg)
