@@ -23,6 +23,18 @@ func (d *ddbHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	switch target {
 	case "DynamoDB_20120810.CreateTable":
 		handle(writer, request, CreateTable)
+	case "DynamoDB_20120810.ListTables":
+		handle(writer, request, ListTables)
+	case "DynamoDB_20120810.DeleteTable":
+		handle(writer, request, DeleteTable)
+	case "DynamoDB_20120810.PutItem":
+		handle(writer, request, PutItem)
+	case "DynamoDB_20120810.GetItem":
+		handle(writer, request, GetItem)
+	case "DynamoDB_20120810.UpdateItem":
+		handle(writer, request, UpdateItem)
+	case "DynamoDB_20120810.DeleteItem":
+		handle(writer, request, DeleteItem)
 	default:
 		sendResponse(writer, 404, fmt.Sprintf("Unknown target method: %v", target))
 	}
