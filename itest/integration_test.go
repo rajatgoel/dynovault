@@ -26,6 +26,7 @@ func getDDBService(t *testing.T) *dynamodb.DynamoDB {
 			"SECRET_KEY",
 			"TOKEN",
 		),
+		MaxRetries: aws.Int(1),
 	}
 
 	sess, err := session.NewSession(cfg)

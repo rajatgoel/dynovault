@@ -24,7 +24,7 @@ func (d *ddbHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	case "DynamoDB_20120810.CreateTable":
 		handle(writer, request, CreateTable)
 	default:
-		sendResponse(writer, 404, fmt.Sprintf("Unkonwn target method: %v", target))
+		sendResponse(writer, 404, fmt.Sprintf("Unknown target method: %v", target))
 	}
 }
 
