@@ -12,7 +12,7 @@ type ddbHandler struct {
 	kv KVStore
 }
 
-func New(kv KVStore) *ddbHandler {
+func New(kv KVStore) http.Handler {
 	return &ddbHandler{
 		kv: kv,
 	}
@@ -24,9 +24,7 @@ func (d *ddbHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	case "DynamoDB_20120810.CreateTable":
 		handle(writer, request, CreateTable)
 	default:
-		writer.WriteHeader(404)
-		writer.Header().Set("Content-Type", "application/json")
-		writer.Write([]byte(fmt.Sprintf("Unkonwn target method: %v", target)))
+		sendResponse(writer, 404, fmt.Sprintf("Unkonwn target method: %v", target))
 	}
 }
 
@@ -38,33 +36,33 @@ func handle[I any, O any](
 	body, err := io.ReadAll(request.Body)
 	_ = request.Body.Close()
 	if err != nil {
-		writer.WriteHeader(500)
-		writer.Write([]byte(err.Error()))
+		sendResponse(writer, 500, err.Error())
 		return
 	}
 
 	var i I
 	if err := json.Unmarshal(body, &i); err != nil {
-		writer.WriteHeader(400)
-		writer.Write([]byte(err.Error()))
+		sendResponse(writer, 400, err.Error())
 		return
 	}
 
 	resp, err := fn(request.Context(), &i)
 	if err != nil {
-		writer.WriteHeader(500)
-		writer.Write([]byte(err.Error()))
+		sendResponse(writer, 500, err.Error())
 		return
 	}
 
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
-		writer.WriteHeader(500)
-		writer.Write([]byte(err.Error()))
+		sendResponse(writer, 500, err.Error())
 		return
 	}
 
-	writer.WriteHeader(200)
+	sendResponse(writer, 200, string(jsonResp))
+}
+
+func sendResponse(writer http.ResponseWriter, statusCode int, message string) {
+	writer.WriteHeader(statusCode)
 	writer.Header().Set("Content-Type", "application/json")
-	writer.Write(jsonResp)
+	_, _ = writer.Write([]byte(message))
 }
