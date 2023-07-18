@@ -1,11 +1,11 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 )
 
 type ddbHandler struct {
@@ -18,51 +18,53 @@ func New(kv KVStore) *ddbHandler {
 	}
 }
 
-type dynamodbRequest struct {
-	Method    string
-	InputData map[string]interface{}
-}
-
-func getDdbMethod(request *http.Request) string {
-	return strings.Split(request.Header.Get("x-amz-target"), ".")[1]
-}
-
-func ddbInputFromRequestBody(requestBody []byte) (map[string]interface{}, error) {
-	var input map[string]interface{}
-	err := json.Unmarshal(requestBody, &input)
-	if err != nil {
-		return nil, err
+func (d *ddbHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	target := request.Header.Get("x-amz-target")
+	switch target {
+	case "DynamoDB_20120810.CreateTable":
+		handle(writer, request, CreateTable)
+	default:
+		writer.WriteHeader(404)
+		writer.Header().Set("Content-Type", "application/json")
+		writer.Write([]byte(fmt.Sprintf("Unkonwn target method: %v", target)))
 	}
-	return input, nil
 }
 
-func (d *ddbHandler) ServeHTTP(write http.ResponseWriter, request *http.Request) {
-	method := getDdbMethod(request)
-
+func handle[I any, O any](
+	writer http.ResponseWriter,
+	request *http.Request,
+	fn func(context.Context, *I) (*O, error),
+) {
 	body, err := io.ReadAll(request.Body)
-	request.Body.Close()
-
+	_ = request.Body.Close()
 	if err != nil {
-		write.WriteHeader(500)
+		writer.WriteHeader(500)
+		writer.Write([]byte(err.Error()))
 		return
 	}
 
+	var i I
+	if err := json.Unmarshal(body, &i); err != nil {
+		writer.WriteHeader(400)
+		writer.Write([]byte(err.Error()))
+		return
+	}
+
+	resp, err := fn(request.Context(), &i)
+	if err != nil {
+		writer.WriteHeader(500)
+		writer.Write([]byte(err.Error()))
+		return
+	}
+
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		writer.WriteHeader(500)
+		writer.Write([]byte(err.Error()))
+		return
+	}
+
+	writer.WriteHeader(200)
 	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(404)
-
-	inputData, err := ddbInputFromRequestBody(body)
-	if err != nil {
-		write.WriteHeader(500)
-		return
-	}
-
-	ddbRequest := &dynamodbRequest{
-		Method:    method,
-		InputData: inputData,
-	}
-
-	fmt.Printf("DDB Method: %s\n", ddbRequest.Method)
-	fmt.Printf("DDB Input: %s\n\n", ddbRequest.InputData)
-
-	write.WriteHeader(404)
+	writer.Write(jsonResp)
 }
