@@ -2,7 +2,6 @@ package itest
 
 import (
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -15,7 +14,7 @@ import (
 )
 
 func getDDBService(t *testing.T) *dynamodb.DynamoDB {
-	ts := httptest.NewServer(handler.New(nil))
+	ts := httptest.NewServer(handler.New(newInMemory()))
 	t.Cleanup(ts.Close)
 
 	cfg := &aws.Config{
@@ -38,7 +37,6 @@ func TestCreateTable(t *testing.T) {
 	ddbSvc := getDDBService(t)
 
 	testTableName := "TestTable"
-
 	_, err := ddbSvc.CreateTable(&dynamodb.CreateTableInput{
 		TableName: aws.String(testTableName),
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
@@ -60,20 +58,10 @@ func TestCreateTable(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	listResponse, err := ddbSvc.ListTables(&dynamodb.ListTablesInput{
-		Limit: aws.Int64(1),
+	_, err = ddbSvc.DescribeTable(&dynamodb.DescribeTableInput{
+		TableName: aws.String(testTableName),
 	})
 	require.NoError(t, err)
-
-	found := false
-	// Check that the table we just created is in the return list
-	for _, tableName := range listResponse.TableNames {
-		if strings.Compare(*tableName, testTableName) == 0 {
-			found = true
-			break
-		}
-	}
-	require.Truef(t, found, "Table %v not returned by ListTables after create", testTableName)
 }
 
 func TestInvalidCreateTable(t *testing.T) {
