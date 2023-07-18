@@ -35,26 +35,24 @@ func getDDBService(t *testing.T) *dynamodb.DynamoDB {
 func TestCreateTable(t *testing.T) {
 	ddbSvc := getDDBService(t)
 
-	var attributeDefinitions []*dynamodb.AttributeDefinition
-	attributeDefinitions = append(attributeDefinitions, &dynamodb.AttributeDefinition{
-		AttributeName: aws.String("id"),
-		AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-	})
-	attributeDefinitions = append(attributeDefinitions, &dynamodb.AttributeDefinition{
-		AttributeName: aws.String("value"),
-		AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-	})
-
-	var keySchema []*dynamodb.KeySchemaElement
-	keySchema = append(keySchema, &dynamodb.KeySchemaElement{
-		AttributeName: aws.String("id"),
-		KeyType:       aws.String(dynamodb.KeyTypeHash),
-	})
-
-	_, err := ddbSvc.CreateTable(&dynamodb.CreateTableInput{
-		TableName:            aws.String("TestTable"),
-		AttributeDefinitions: attributeDefinitions,
-		KeySchema:            keySchema,
+	_, err = ddbSvc.CreateTable(&dynamodb.CreateTableInput{
+		TableName: aws.String("TestTable"),
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			&dynamodb.AttributeDefinition{
+				AttributeName: aws.String("id"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+			&dynamodb.AttributeDefinition{
+				AttributeName: aws.String("value"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			&dynamodb.KeySchemaElement{
+				AttributeName: aws.String("id"),
+				KeyType:       aws.String(dynamodb.KeyTypeHash),
+			},
+		},
 	})
 	require.NoError(t, err)
 }

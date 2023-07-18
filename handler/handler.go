@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type ddbHandler struct {
@@ -16,23 +18,51 @@ func New(kv KVStore) *ddbHandler {
 	}
 }
 
-func (d *ddbHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	fmt.Println("Received HTTP Request:")
-	fmt.Printf("%v %v %v\n", request.Method, request.URL, request.Proto)
-	fmt.Printf("Host: %v\n", request.Host)
-	for name, headers := range request.Header {
-		for _, h := range headers {
-			fmt.Printf("%v: %v\n", name, h)
-		}
+type dynamodbRequest struct {
+	Method    string
+	InputData map[string]interface{}
+}
+
+func getDdbMethod(request *http.Request) string {
+	return strings.Split(request.Header.Get("x-amz-target"), ".")[1]
+}
+
+func ddbInputFromRequestBody(requestBody []byte) (map[string]interface{}, error) {
+	var input map[string]interface{}
+	err := json.Unmarshal(requestBody, &input)
+	if err != nil {
+		return nil, err
 	}
+	return input, nil
+}
+
+func (d *ddbHandler) ServeHTTP(write http.ResponseWriter, request *http.Request) {
+	method := getDdbMethod(request)
+
 	body, err := io.ReadAll(request.Body)
 	request.Body.Close()
+
 	if err != nil {
-		writer.WriteHeader(500)
+		write.WriteHeader(500)
 		return
 	}
-	fmt.Printf("%s\n\n", body)
 
-	writer.Header().Set("Content-Type", "application/xml")
+	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(404)
+
+	inputData, err := ddbInputFromRequestBody(body)
+	if err != nil {
+		write.WriteHeader(500)
+		return
+	}
+
+	ddbRequest := &dynamodbRequest{
+		Method:    method,
+		InputData: inputData,
+	}
+
+	fmt.Printf("DDB Method: %s\n", ddbRequest.Method)
+	fmt.Printf("DDB Input: %s\n\n", ddbRequest.InputData)
+
+	write.WriteHeader(404)
 }
