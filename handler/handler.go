@@ -44,11 +44,15 @@ func (d *ddbHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	}
 }
 
-func handle[I any, O any](
+type validatable interface {
+	Validate() error
+}
+
+func handle[I validatable, O any](
 	writer http.ResponseWriter,
 	request *http.Request,
 	s *state,
-	fn func(context.Context, *state, *I) (*O, error),
+	fn func(context.Context, *state, I) (O, error),
 ) {
 	body, err := io.ReadAll(request.Body)
 	_ = request.Body.Close()
@@ -63,7 +67,12 @@ func handle[I any, O any](
 		return
 	}
 
-	resp, err := fn(request.Context(), s, &i)
+	if err := i.Validate(); err != nil {
+		sendResponse(writer, 400, err.Error())
+		return
+	}
+
+	resp, err := fn(request.Context(), s, i)
 	if err != nil {
 		sendResponse(writer, 500, err.Error())
 		return

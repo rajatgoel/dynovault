@@ -58,6 +58,15 @@ func TestCreateTable(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestInvalidCreateTable(t *testing.T) {
+	ddbSvc := getDDBService(t)
+
+	_, err := ddbSvc.CreateTable(&dynamodb.CreateTableInput{
+		TableName: aws.String(""),
+	})
+	require.Error(t, err)
+}
+
 func TestListTables(t *testing.T) {
 	ddbSvc := getDDBService(t)
 
