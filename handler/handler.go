@@ -7,10 +7,13 @@ import (
 )
 
 type ddbHandler struct {
+	kv KVStore
 }
 
-func New() *ddbHandler {
-	return &ddbHandler{}
+func New(kv KVStore) *ddbHandler {
+	return &ddbHandler{
+		kv: kv,
+	}
 }
 
 func (d *ddbHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -30,5 +33,6 @@ func (d *ddbHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	}
 	fmt.Printf("%s\n\n", body)
 
+	writer.Header().Set("Content-Type", "application/xml")
 	writer.WriteHeader(404)
 }

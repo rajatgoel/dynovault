@@ -13,8 +13,9 @@ import (
 	"rajatgoel/dynovault/handler"
 )
 
-func getDDBService() (*dynamodb.DynamoDB, error) {
-	ts := httptest.NewServer(handler.New())
+func getDDBService(t *testing.T) *dynamodb.DynamoDB {
+	ts := httptest.NewServer(handler.New(nil))
+	t.Cleanup(ts.Close)
 
 	cfg := &aws.Config{
 		Region:   aws.String("us-east-1"),
@@ -27,16 +28,12 @@ func getDDBService() (*dynamodb.DynamoDB, error) {
 	}
 
 	sess, err := session.NewSession(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return dynamodb.New(sess, cfg), nil
+	require.NoError(t, err)
+	return dynamodb.New(sess, cfg)
 }
 
 func TestCreateTable(t *testing.T) {
-	ddbSvc, err := getDDBService()
-	require.NoError(t, err)
+	ddbSvc := getDDBService(t)
 
 	var attributeDefinitions []*dynamodb.AttributeDefinition
 	attributeDefinitions = append(attributeDefinitions, &dynamodb.AttributeDefinition{
@@ -54,7 +51,7 @@ func TestCreateTable(t *testing.T) {
 		KeyType:       aws.String(dynamodb.KeyTypeHash),
 	})
 
-	_, err = ddbSvc.CreateTable(&dynamodb.CreateTableInput{
+	_, err := ddbSvc.CreateTable(&dynamodb.CreateTableInput{
 		TableName:            aws.String("TestTable"),
 		AttributeDefinitions: attributeDefinitions,
 		KeySchema:            keySchema,
@@ -63,30 +60,27 @@ func TestCreateTable(t *testing.T) {
 }
 
 func TestListTables(t *testing.T) {
-	ddbSvc, err := getDDBService()
-	require.NoError(t, err)
+	ddbSvc := getDDBService(t)
 
-	_, err = ddbSvc.ListTables(&dynamodb.ListTablesInput{
+	_, err := ddbSvc.ListTables(&dynamodb.ListTablesInput{
 		Limit: aws.Int64(5),
 	})
 	require.NoError(t, err)
 }
 
 func TestDeleteTable(t *testing.T) {
-	ddbSvc, err := getDDBService()
-	require.NoError(t, err)
+	ddbSvc := getDDBService(t)
 
-	_, err = ddbSvc.DeleteTable(&dynamodb.DeleteTableInput{
+	_, err := ddbSvc.DeleteTable(&dynamodb.DeleteTableInput{
 		TableName: aws.String("TestTable"),
 	})
 	require.NoError(t, err)
 }
 
 func TestPutItem(t *testing.T) {
-	ddbSvc, err := getDDBService()
-	require.NoError(t, err)
+	ddbSvc := getDDBService(t)
 
-	_, err = ddbSvc.PutItem(&dynamodb.PutItemInput{
+	_, err := ddbSvc.PutItem(&dynamodb.PutItemInput{
 		TableName: aws.String("TestTable"),
 		Item: map[string]*dynamodb.AttributeValue{
 			"id": {
@@ -101,10 +95,9 @@ func TestPutItem(t *testing.T) {
 }
 
 func TestGetItem(t *testing.T) {
-	ddbSvc, err := getDDBService()
-	require.NoError(t, err)
+	ddbSvc := getDDBService(t)
 
-	_, err = ddbSvc.GetItem(&dynamodb.GetItemInput{
+	_, err := ddbSvc.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String("TestTable"),
 		Key: map[string]*dynamodb.AttributeValue{
 			"id": {
@@ -116,10 +109,9 @@ func TestGetItem(t *testing.T) {
 }
 
 func TestUpdateItem(t *testing.T) {
-	ddbSvc, err := getDDBService()
-	require.NoError(t, err)
+	ddbSvc := getDDBService(t)
 
-	_, err = ddbSvc.UpdateItem(&dynamodb.UpdateItemInput{
+	_, err := ddbSvc.UpdateItem(&dynamodb.UpdateItemInput{
 		TableName: aws.String("TestTable"),
 		Key: map[string]*dynamodb.AttributeValue{
 			"id": {
@@ -141,10 +133,9 @@ func TestUpdateItem(t *testing.T) {
 }
 
 func TestDeleteItem(t *testing.T) {
-	ddbSvc, err := getDDBService()
-	require.NoError(t, err)
+	ddbSvc := getDDBService(t)
 
-	_, err = ddbSvc.DeleteItem(&dynamodb.DeleteItemInput{
+	_, err := ddbSvc.DeleteItem(&dynamodb.DeleteItemInput{
 		TableName: aws.String("TestTable"),
 		Key: map[string]*dynamodb.AttributeValue{
 			"id": {
