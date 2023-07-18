@@ -8,13 +8,17 @@ import (
 	"net/http"
 )
 
-type ddbHandler struct {
+type state struct {
 	kv KVStore
+}
+
+type ddbHandler struct {
+	s *state
 }
 
 func New(kv KVStore) http.Handler {
 	return &ddbHandler{
-		kv: kv,
+		s: &state{kv: kv},
 	}
 }
 
@@ -22,19 +26,19 @@ func (d *ddbHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	target := request.Header.Get("x-amz-target")
 	switch target {
 	case "DynamoDB_20120810.CreateTable":
-		handle(writer, request, CreateTable)
+		handle(writer, request, d.s, CreateTable)
 	case "DynamoDB_20120810.ListTables":
-		handle(writer, request, ListTables)
+		handle(writer, request, d.s, ListTables)
 	case "DynamoDB_20120810.DeleteTable":
-		handle(writer, request, DeleteTable)
+		handle(writer, request, d.s, DeleteTable)
 	case "DynamoDB_20120810.PutItem":
-		handle(writer, request, PutItem)
+		handle(writer, request, d.s, PutItem)
 	case "DynamoDB_20120810.GetItem":
-		handle(writer, request, GetItem)
+		handle(writer, request, d.s, GetItem)
 	case "DynamoDB_20120810.UpdateItem":
-		handle(writer, request, UpdateItem)
+		handle(writer, request, d.s, UpdateItem)
 	case "DynamoDB_20120810.DeleteItem":
-		handle(writer, request, DeleteItem)
+		handle(writer, request, d.s, DeleteItem)
 	default:
 		sendResponse(writer, 404, fmt.Sprintf("Unknown target method: %v", target))
 	}
@@ -43,7 +47,8 @@ func (d *ddbHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request
 func handle[I any, O any](
 	writer http.ResponseWriter,
 	request *http.Request,
-	fn func(context.Context, *I) (*O, error),
+	s *state,
+	fn func(context.Context, *state, *I) (*O, error),
 ) {
 	body, err := io.ReadAll(request.Body)
 	_ = request.Body.Close()
@@ -58,7 +63,7 @@ func handle[I any, O any](
 		return
 	}
 
-	resp, err := fn(request.Context(), &i)
+	resp, err := fn(request.Context(), s, &i)
 	if err != nil {
 		sendResponse(writer, 500, err.Error())
 		return
