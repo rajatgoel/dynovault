@@ -35,20 +35,20 @@ func getDDBService(t *testing.T) *dynamodb.DynamoDB {
 func TestCreateTable(t *testing.T) {
 	ddbSvc := getDDBService(t)
 
-	_, err = ddbSvc.CreateTable(&dynamodb.CreateTableInput{
+	_, err := ddbSvc.CreateTable(&dynamodb.CreateTableInput{
 		TableName: aws.String("TestTable"),
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
-			&dynamodb.AttributeDefinition{
+			{
 				AttributeName: aws.String("id"),
 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
 			},
-			&dynamodb.AttributeDefinition{
+			{
 				AttributeName: aws.String("value"),
 				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
 			},
 		},
 		KeySchema: []*dynamodb.KeySchemaElement{
-			&dynamodb.KeySchemaElement{
+			{
 				AttributeName: aws.String("id"),
 				KeyType:       aws.String(dynamodb.KeyTypeHash),
 			},
