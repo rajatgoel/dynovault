@@ -1,4 +1,4 @@
-module rajatgoel/dynovault
+module github.com/rajatgoel/dynovault
 
 go 1.20
 
