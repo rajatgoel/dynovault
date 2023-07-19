@@ -57,6 +57,10 @@ func (d *ddbHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request
 		handle(writer, request, d.s, DeleteItem)
 	case "DynamoDB_20120810.DescribeTable":
 		handle(writer, request, d.s, DescribeTable)
+	case "DynamoDB_20120810.BatchWriteItem":
+		handle(writer, request, d.s, BatchWriteItem)
+	case "DynamoDB_20120810.BatchGetItem":
+		handle(writer, request, d.s, BatchGetItem)
 	default:
 		sendResponse(writer, 404, fmt.Sprintf("Unknown target method: %v", target))
 	}

@@ -19,14 +19,10 @@ func getDDBService(t *testing.T) *dynamodb.DynamoDB {
 	t.Cleanup(ts.Close)
 
 	cfg := &aws.Config{
-		Region:     aws.String("us-east-1"),
-		Endpoint:   aws.String(ts.URL),
-		MaxRetries: aws.Int(0),
-		Credentials: credentials.NewStaticCredentials(
-			"ID",
-			"SECRET_KEY",
-			"TOKEN",
-		),
+		Region:      aws.String("us-east-1"),
+		Endpoint:    aws.String(ts.URL),
+		MaxRetries:  aws.Int(0),
+		Credentials: credentials.NewStaticCredentials("ID", "SECRET_KEY", "TOKEN"),
 	}
 
 	sess, err := session.NewSession(cfg)
