@@ -8,13 +8,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/rajatgoel/dynovault/inmemory"
 	"github.com/stretchr/testify/require"
 
 	"github.com/rajatgoel/dynovault/handler"
 )
 
 func getDDBService(t *testing.T) *dynamodb.DynamoDB {
-	ts := httptest.NewServer(handler.New(newInMemory()))
+	ts := httptest.NewServer(handler.New(inmemory.New()))
 	t.Cleanup(ts.Close)
 
 	cfg := &aws.Config{

@@ -1,23 +1,24 @@
-package itest
+package inmemory
 
 import (
 	"context"
-	"github.com/rajatgoel/dynovault/handler"
 	"sync"
+
+	"github.com/rajatgoel/dynovault/handler"
 )
 
-type inmemory struct {
+type InMemory struct {
 	mu    sync.Mutex
 	store map[string]string
 }
 
-func newInMemory() *inmemory {
-	return &inmemory{
+func New() *InMemory {
+	return &InMemory{
 		store: make(map[string]string),
 	}
 }
 
-func (m *inmemory) Get(_ context.Context, key []byte) ([]byte, error) {
+func (m *InMemory) Get(_ context.Context, key []byte) ([]byte, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -29,7 +30,7 @@ func (m *inmemory) Get(_ context.Context, key []byte) ([]byte, error) {
 	return []byte(v), nil
 }
 
-func (m *inmemory) Put(_ context.Context, key []byte, value []byte) error {
+func (m *InMemory) Put(_ context.Context, key []byte, value []byte) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
