@@ -9,7 +9,6 @@ import (
 
 func CreateTable(ctx context.Context, s *state, input *dynamodb.CreateTableInput) (*dynamodb.CreateTableOutput, error) {
 	// TODO: Check if table already exists
-	// TODO: Check if user has permission to create table
 	// TODO: Fill TableDescription with useful data
 
 	key := fmt.Sprintf("$table:%s", *input.TableName)
