@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+
+	"github.com/gorilla/handlers"
 )
 
 type state struct {
@@ -17,9 +20,22 @@ type ddbHandler struct {
 }
 
 func New(kv KVStore) http.Handler {
-	return &ddbHandler{
+	var r http.Handler = &ddbHandler{
 		s: &state{kv: kv},
 	}
+
+	r = handlers.CustomLoggingHandler(os.Stdout, r, func(writer io.Writer, params handlers.LogFormatterParams) {
+		_, _ = fmt.Fprintf(
+			writer,
+			"[%s] %s -> %d (%vB)\n",
+			params.TimeStamp.Format("02/Jan/2006:15:04:05 -0700"),
+			params.Request.Header.Get("x-amz-target"),
+			params.StatusCode,
+			params.Size,
+		)
+	})
+
+	return r
 }
 
 func (d *ddbHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {

@@ -3,9 +3,6 @@ package main
 import (
 	"flag"
 	"net/http"
-	"os"
-
-	"github.com/gorilla/handlers"
 
 	"github.com/rajatgoel/dynovault/handler"
 	"github.com/rajatgoel/dynovault/inmemory"
@@ -17,7 +14,7 @@ func main() {
 
 	kvStore := inmemory.New()
 	reqHandler := handler.New(kvStore)
-	http.Handle("/", handlers.LoggingHandler(os.Stdout, reqHandler))
+	http.Handle("/", reqHandler)
 
 	_ = http.ListenAndServe(*addr, nil)
 }
