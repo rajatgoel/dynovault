@@ -1,2 +1,3 @@
 pandas~=1.5.3
 feast~=0.31.1
+feast[aws]~=0.31.1
