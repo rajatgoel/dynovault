@@ -13,8 +13,7 @@ run-server: kill-server
 
 run: feastle/venv run-server
 	. feastle/venv/bin/activate; cd feastle/feature_repo; python3.11 test_workflow.py || true
-	pkill -P `cat main.pid`
-	rm main.pid
+	test -f main.pid && pkill -P `cat main.pid` ||  rm -f main.pid
 
 clean: kill-server
 	rm -rf feastle/venv

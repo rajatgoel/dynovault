@@ -25,7 +25,7 @@ driver = Entity(name="driver", join_keys=["driver_id"])
 # for more info.
 driver_stats_source = FileSource(
     name="driver_hourly_stats_source",
-    path="/Users/rajat/src/dynovault/feastle/feature_repo/data/driver_stats.parquet",
+    path="data/driver_stats.parquet",
     timestamp_field="event_timestamp",
     created_timestamp_column="created",
 )
