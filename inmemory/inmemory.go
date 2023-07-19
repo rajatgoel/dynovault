@@ -37,3 +37,11 @@ func (m *InMemory) Put(_ context.Context, key []byte, value []byte) error {
 	m.store[string(key)] = string(value)
 	return nil
 }
+
+func (m *InMemory) Delete(_ context.Context, key []byte) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	delete(m.store, string(key))
+	return nil
+}
