@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	addr := flag.String("addr", ":8779", "Server address")
+	addr := flag.String("addr", "127.0.0.1:8779", "Server address")
 	flag.Parse()
 
 	kvStore := inmemory.New()
