@@ -102,7 +102,7 @@ func newLoadgen(param loadgenParams, db *dynamodb.DynamoDB) *loadgen {
 func (l *loadgen) createTables(ctx context.Context, tables []string) error {
 	beginTime := time.Now()
 	for _, tableName := range tables {
-		_, err := l.db.CreateTable(&dynamodb.CreateTableInput{
+		_, err := l.db.CreateTableWithContext(ctx, &dynamodb.CreateTableInput{
 			TableName: aws.String(tableName),
 			AttributeDefinitions: []*dynamodb.AttributeDefinition{
 				{
@@ -212,7 +212,7 @@ func (l *loadgen) doBatchGetItem(ctx context.Context) error {
 		features[i] = feastle.GenerateRandomFeature(l.tables)
 	}
 	batchGetItemInput := feastle.NewBatchGetItemInput(features)
-	out, err := l.db.BatchGetItem(batchGetItemInput)
+	out, err := l.db.BatchGetItemWithContext(ctx, batchGetItemInput)
 	if err != nil {
 		return err
 	}
@@ -227,7 +227,7 @@ func (l *loadgen) doBatchWriteItem(ctx context.Context) error {
 		features[i] = feastle.GenerateRandomFeature(l.tables)
 	}
 	batchWriteItemInput := feastle.NewBatchWriteItemInput(features)
-	out, err := l.db.BatchWriteItem(batchWriteItemInput)
+	out, err := l.db.BatchWriteItemWithContext(ctx, batchWriteItemInput)
 	if err != nil {
 		return err
 	}
@@ -238,15 +238,10 @@ func (l *loadgen) doBatchWriteItem(ctx context.Context) error {
 func (l *loadgen) doDeleteItem(ctx context.Context) error {
 	deleteItemInput := &dynamodb.DeleteItemInput{}
 
-	_, err := l.db.DeleteItem(deleteItemInput)
+	_, err := l.db.DeleteItemWithContext(ctx, deleteItemInput)
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func (l *loadgen) doDeleteTable(ctx context.Context) error {
-	// todo
 	return nil
 }
 
