@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"math/rand"
+	"time"
 )
 
 var (
@@ -52,25 +53,27 @@ func (l *loadgen) Run(ctx context.Context) error {
 		default:
 		}
 
-		action := actions[rand.Int()]
+		action := actions[rand.Int()%len(actions)]
 		if err := action(ctx, l.db); err != nil {
 			fmt.Printf("failed to execute action: %s", err)
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
 var actions = []func(context.Context, *dynamodb.DynamoDB) error{
 	doBatchGetItem,
-	doBatchWriteItem,
-	doCreateTable,
-	doDeleteItem,
-	doDeleteTable,
-	doDescribeTable,
-	doGetItem,
-	doPutItem,
+	// doBatchWriteItem,
+	// doCreateTable,
+	// doDeleteItem,
+	// doDeleteTable,
+	// doDescribeTable,
+	// doGetItem,
+	// doPutItem,
 }
 
 func doBatchGetItem(ctx context.Context, db *dynamodb.DynamoDB) error {
+	fmt.Printf("doBatchGetItem\n")
 	return nil
 }
 
