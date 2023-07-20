@@ -84,33 +84,6 @@ func newLoadgen(param loadgenParams, db *dynamodb.DynamoDB) *loadgen {
 
 func (l *loadgen) BulkUpload(ctx context.Context, duration time.Duration) error {
 	tables := generateTableNames(l.param.numTables)
-	// testTableName := "TestTable"
-	// _, err := s.db.CreateTable(&dynamodb.CreateTableInput{
-	// 	TableName: aws.String(testTableName),
-	// 	AttributeDefinitions: []*dynamodb.AttributeDefinition{
-	// 		{
-	// 			AttributeName: aws.String("id"),
-	// 			AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-	// 		},
-	// 		{
-	// 			AttributeName: aws.String("value"),
-	// 			AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
-	// 		},
-	// 	},
-	// 	KeySchema: []*dynamodb.KeySchemaElement{
-	// 		{
-	// 			AttributeName: aws.String("id"),
-	// 			KeyType:       aws.String(dynamodb.KeyTypeHash),
-	// 		},
-	// 	},
-	// })
-	// require.NoError(s.T(), err)
-	//
-	// _, err = s.db.DescribeTable(&dynamodb.DescribeTableInput{
-	// 	TableName: aws.String(testTableName),
-	// })
-	// require.NoError(s.T(), err)
-
 	log.Println("Creating tables.... len(tables):", len(tables))
 
 	for _, tableName := range tables {
