@@ -21,7 +21,7 @@ tags
 
 __pycache__/
 
-feastle/feature_repo/data/registry.db
+feastle/test_repo/
 feastle/venv/
 
 main.pid
