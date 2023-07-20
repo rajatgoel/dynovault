@@ -26,7 +26,7 @@ var (
 
 func main() {
 	flag.StringVar(&endpointURL, "endpoint", "http://127.0.0.1:8779", "DynamoDB endpoint")
-	flag.DurationVar(&bulkfillDuration, "bulkfill_duration", 10*time.Second, "Duration to run bulkfill for")
+	flag.DurationVar(&bulkfillDuration, "bulkfill_duration", 1*time.Second, "Duration to run bulkfill for")
 	flag.IntVar(&numTables, "num_tables", 10, "Number of tables to create")
 	flag.IntVar(&numParallelReader, "num_parallel_reader", 10, "Number of parallel readers")
 	flag.IntVar(&numParallelWriter, "num_parallel_writer", 10, "Number of parallel writers")
@@ -54,10 +54,10 @@ func main() {
 		db,
 	)
 
-	// err = lg.BulkUpload(context.Background(), bulkfillDuration)
-	// if err != nil {
-	// 	panic(fmt.Errorf("failed to bulk upload: %s", err))
-	// }
+	err = lg.BulkUpload(context.Background(), bulkfillDuration)
+	if err != nil {
+		panic(fmt.Errorf("failed to bulk upload: %s", err))
+	}
 
 	err = lg.Run(context.Background())
 	if err != nil {
@@ -140,6 +140,8 @@ func (l *loadgen) BulkUpload(ctx context.Context, duration time.Duration) error 
 		return err
 	}
 
+	l.tables = tables
+
 	wg := sync.WaitGroup{}
 	wg.Add(l.param.numParallelWriter)
 	var writerErr error
@@ -197,30 +199,32 @@ func (l *loadgen) Run(ctx context.Context) error {
 }
 
 func (l *loadgen) doBatchGetItem(ctx context.Context) error {
-	numFeatures := rand.Int() % 100
+	numFeatures := rand.Int()%100 + 1
 	features := make([]*feastle.FeastFeature, numFeatures)
 	for i := 0; i < numFeatures; i++ {
 		features[i] = feastle.GenerateRandomFeature(l.tables)
 	}
 	batchGetItemInput := feastle.NewBatchGetItemInput(features)
-	_, err := l.db.BatchGetItem(batchGetItemInput)
+	out, err := l.db.BatchGetItem(batchGetItemInput)
 	if err != nil {
 		return err
 	}
+	log.Println("BatchGetItem output:", out)
 	return nil
 }
 
 func (l *loadgen) doBatchWriteItem(ctx context.Context) error {
-	numFeatures := rand.Int() % 100
+	numFeatures := rand.Int()%100 + 1
 	features := make([]*feastle.FeastFeature, numFeatures)
 	for i := 0; i < numFeatures; i++ {
 		features[i] = feastle.GenerateRandomFeature(l.tables)
 	}
 	batchWriteItemInput := feastle.NewBatchWriteItemInput(features)
-	_, err := l.db.BatchWriteItem(batchWriteItemInput)
+	out, err := l.db.BatchWriteItem(batchWriteItemInput)
 	if err != nil {
 		return err
 	}
+	log.Println("BatchWriteItem output:", out)
 	return nil
 }
 
