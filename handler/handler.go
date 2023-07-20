@@ -7,12 +7,15 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/gorilla/handlers"
 )
 
 type state struct {
 	kv KVStore
+
+	partitionKey sync.Map
 }
 
 type ddbHandler struct {

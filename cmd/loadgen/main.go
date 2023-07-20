@@ -195,11 +195,11 @@ func (l *loadgen) Run(ctx context.Context) error {
 		switch rand.Intn(100) {
 		case 0:
 			if err := l.doBatchWriteItem(ctx); err != nil {
-				fmt.Printf("failed to write", err)
+				fmt.Printf("failed to write: %v", err)
 			}
 		default:
 			if err := l.doBatchGetItem(ctx); err != nil {
-				fmt.Printf("failed to get", err)
+				fmt.Printf("failed to get: %v", err)
 			}
 		}
 	}
