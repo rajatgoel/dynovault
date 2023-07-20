@@ -17,11 +17,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+
+	"github.com/valyala/histogram"
 )
 
 var (
 	endpointURL       string
 	bulkfillDuration  time.Duration
+	steadyDuration    time.Duration
 	numTables         int
 	numParallelReader int
 	numParallelWriter int
@@ -30,6 +33,7 @@ var (
 func main() {
 	flag.StringVar(&endpointURL, "endpoint", "http://127.0.0.1:8779", "DynamoDB endpoint")
 	flag.DurationVar(&bulkfillDuration, "bulkfill_duration", 1*time.Second, "Duration to run bulkfill for")
+	flag.DurationVar(&steadyDuration, "steady_duration", 5*time.Second, "Duration to run steady load for")
 	flag.IntVar(&numTables, "num_tables", 10, "Number of tables to create")
 	flag.IntVar(&numParallelReader, "num_parallel_reader", 10, "Number of parallel readers")
 	flag.IntVar(&numParallelWriter, "num_parallel_writer", 10, "Number of parallel writers")
@@ -70,7 +74,7 @@ func main() {
 		panic(fmt.Errorf("failed to bulk upload: %s", err))
 	}
 
-	err = lg.Run(ctx)
+	lg.Run(ctx, steadyDuration)
 	if err != nil {
 		panic(fmt.Errorf("failed to run loadgen: %s", err))
 	}
@@ -101,6 +105,7 @@ func newLoadgen(param loadgenParams, db *dynamodb.DynamoDB) *loadgen {
 
 func (l *loadgen) createTables(ctx context.Context, tables []string) error {
 	beginTime := time.Now()
+	log.Println("Creating tables.... len(tables):", len(tables))
 	for _, tableName := range tables {
 		_, err := l.db.CreateTableWithContext(ctx, &dynamodb.CreateTableInput{
 			TableName: aws.String(tableName),
@@ -123,8 +128,6 @@ func (l *loadgen) createTables(ctx context.Context, tables []string) error {
 		}
 	}
 
-	log.Println("Created tables in...", time.Since(beginTime))
-
 	for _, tableName := range tables {
 		table, err := l.db.DescribeTable(&dynamodb.DescribeTableInput{
 			TableName: aws.String(tableName),
@@ -138,23 +141,21 @@ func (l *loadgen) createTables(ctx context.Context, tables []string) error {
 		}
 	}
 
+	log.Println("Created tables in...", time.Since(beginTime))
 	return nil
 }
 
 func (l *loadgen) BulkUpload(ctx context.Context, duration time.Duration) error {
-	tables := generateTableNames(l.param.numTables)
-	log.Println("Creating tables.... len(tables):", len(tables))
-
-	err := l.createTables(ctx, tables)
+	l.tables = generateTableNames(l.param.numTables)
+	err := l.createTables(ctx, l.tables)
 	if err != nil {
 		return err
 	}
 
-	l.tables = tables
-
 	wg := sync.WaitGroup{}
 	wg.Add(l.param.numParallelWriter)
 	var writerErr error
+	var numWrites int
 	for i := 0; i < l.param.numParallelWriter; i++ {
 		go func() {
 			defer wg.Done()
@@ -174,18 +175,34 @@ func (l *loadgen) BulkUpload(ctx context.Context, duration time.Duration) error 
 					writerErr = err
 				}
 
+				numWrites += 1
 			}
 		}()
 	}
 	wg.Wait()
 
+	log.Printf(
+		"Bulk uploaded %d items in %.02fs at %.0f/s\n",
+		numWrites,
+		duration.Seconds(),
+		float64(numWrites)/duration.Seconds(),
+	)
 	return writerErr
 }
 
 // Run blocks until the context is cancelled.
-func (l *loadgen) Run(ctx context.Context) error {
+func (l *loadgen) Run(ctx context.Context, duration time.Duration) error {
+	timer := time.NewTimer(duration)
+	defer timer.Stop()
+
+	r, w := 0, 0
+	rp, wp := histogram.NewFast(), histogram.NewFast()
+
+L:
 	for {
 		select {
+		case <-timer.C:
+			break L
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
@@ -194,15 +211,38 @@ func (l *loadgen) Run(ctx context.Context) error {
 		// 1% write, 99% get
 		switch rand.Intn(100) {
 		case 0:
+			t := time.Now()
 			if err := l.doBatchWriteItem(ctx); err != nil {
 				fmt.Printf("failed to write: %v", err)
 			}
+			w += 1
+			wp.Update(float64(time.Since(t).Milliseconds()))
 		default:
+			t := time.Now()
 			if err := l.doBatchGetItem(ctx); err != nil {
 				fmt.Printf("failed to get: %v", err)
 			}
+			r += 1
+			rp.Update(float64(time.Since(t).Milliseconds()))
 		}
 	}
+
+	log.Printf("Ran steady load for %.02fs", steadyDuration.Seconds())
+	log.Printf(
+		"Reads: total %d, QPS %.02f/s, avg %.02fms, p99 %.02fms",
+		r,
+		float64(r)/steadyDuration.Seconds(),
+		rp.Quantile(.5),
+		rp.Quantile(.99),
+	)
+	log.Printf(
+		"Writes: total %d, QPS %.02f/s, avg %.02fms, p99 %.02fms",
+		w,
+		float64(w)/steadyDuration.Seconds(),
+		wp.Quantile(.5),
+		wp.Quantile(.99),
+	)
+	return nil
 }
 
 func (l *loadgen) doBatchGetItem(ctx context.Context) error {
