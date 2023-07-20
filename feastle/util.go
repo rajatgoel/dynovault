@@ -17,11 +17,11 @@ type FeastFeature struct {
 
 func GenerateRandomFeature(featureNames []string) *FeastFeature {
 	featureName := featureNames[rand.Intn(len(featureNames))]
-	randId := fmt.Sprintf("key-%d…", rand.Int()%1000)
-	randTs := fmt.Sprintf("ts-%d…", rand.Int()%1000)
-	randValue1 := fmt.Sprintf("ts-%d…", rand.Int()%1000)
-	randValue2 := fmt.Sprintf("ts-%d…", rand.Int()%1000)
-	randValue3 := fmt.Sprintf("ts-%d…", rand.Int()%1000)
+	randId := fmt.Sprintf("key-%d", rand.Int()%1000)
+	randTs := fmt.Sprintf("ts-%d", rand.Int()%1000)
+	randValue1 := fmt.Sprintf("%d", rand.Int()%100000)
+	randValue2 := fmt.Sprintf("%d", rand.Int()%100000)
+	randValue3 := fmt.Sprintf("%d", rand.Int()%100000)
 
 	return &FeastFeature{
 		FeatureName:    featureName,
