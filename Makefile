@@ -27,6 +27,7 @@ clean: kill-server
 	rm -rf feastle/venv
 	rm -rf feastle/test_repo
 
-run-loadgen: go run cmd/loadgen/main.go
+run-loadgen: 
+	go run cmd/loadgen/main.go
 
 loadgen: run-server run-loadgen kill-server
