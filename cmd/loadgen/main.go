@@ -74,11 +74,7 @@ func main() {
 		panic(fmt.Errorf("failed to bulk upload: %s", err))
 	}
 
-	lg.Run(ctx, steadyDuration)
-	if err != nil {
-		panic(fmt.Errorf("failed to run loadgen: %s", err))
-	}
-
+	_ = lg.Run(ctx, steadyDuration)
 }
 
 type loadgenParams struct {
