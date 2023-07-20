@@ -4,13 +4,14 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
+	"math/rand"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"log"
-	"math/rand"
-	"time"
 )
 
 var (
@@ -22,7 +23,7 @@ var (
 )
 
 func main() {
-	flag.StringVar(&endpointURL, "endpoint", "127.0.0.1:8779", "DynamoDB endpoint")
+	flag.StringVar(&endpointURL, "endpoint", "http://127.0.0.1:8779", "DynamoDB endpoint")
 	flag.DurationVar(&bulkfillDuration, "bulkfill_duration", 10*time.Second, "Duration to run bulkfill for")
 	flag.IntVar(&numTables, "num_tables", 10, "Number of tables to create")
 	flag.IntVar(&numParallelReader, "num_parallel_reader", 10, "Number of parallel readers")
