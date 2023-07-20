@@ -14,7 +14,6 @@ func BatchWriteItem(
 	s *state,
 	input *dynamodb.BatchWriteItemInput,
 ) (*dynamodb.BatchWriteItemOutput, error) {
-	fmt.Printf("BatchWriteItemInput: %s\n", input.String())
 	for tableName, writeRequests := range input.RequestItems {
 		for _, writeRequest := range writeRequests {
 			key := tableName
@@ -52,5 +51,7 @@ func BatchWriteItem(
 			}
 		}
 	}
-	return &dynamodb.BatchWriteItemOutput{}, nil
+	return &dynamodb.BatchWriteItemOutput{
+		UnprocessedItems: map[string][]*dynamodb.WriteRequest{},
+	}, nil
 }

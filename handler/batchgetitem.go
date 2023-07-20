@@ -15,7 +15,6 @@ func BatchGetItem(
 ) (*dynamodb.BatchGetItemOutput, error) {
 	responses := map[string][]map[string]*dynamodb.AttributeValue{}
 
-	fmt.Printf("BatchGetItemInput: %s\n", input.String())
 	for tableName, requestItem := range input.RequestItems {
 		key := tableName
 		for _, attr := range requestItem.Keys {
@@ -37,7 +36,6 @@ func BatchGetItem(
 		}
 	}
 	return &dynamodb.BatchGetItemOutput{
-		Responses:       responses,
-		UnprocessedKeys: map[string]*dynamodb.KeysAndAttributes{},
+		Responses: responses,
 	}, nil
 }
