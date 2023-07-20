@@ -51,8 +51,6 @@ func (d *ddbHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request
 		handle(writer, request, d.s, PutItem)
 	case "DynamoDB_20120810.GetItem":
 		handle(writer, request, d.s, GetItem)
-	case "DynamoDB_20120810.UpdateItem":
-		handle(writer, request, d.s, UpdateItem)
 	case "DynamoDB_20120810.DeleteItem":
 		handle(writer, request, d.s, DeleteItem)
 	case "DynamoDB_20120810.DescribeTable":

@@ -91,8 +91,30 @@ func TestDeleteTable(t *testing.T) {
 func TestPutItem(t *testing.T) {
 	ddbSvc := getDDBService(t)
 
-	_, err := ddbSvc.PutItem(&dynamodb.PutItemInput{
-		TableName: aws.String("TestTable"),
+	testTableName := "TestTable"
+	_, err := ddbSvc.CreateTable(&dynamodb.CreateTableInput{
+		TableName: aws.String(testTableName),
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("id"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+			{
+				AttributeName: aws.String("value"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("id"),
+				KeyType:       aws.String(dynamodb.KeyTypeHash),
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	_, err = ddbSvc.PutItem(&dynamodb.PutItemInput{
+		TableName: aws.String(testTableName),
 		Item: map[string]*dynamodb.AttributeValue{
 			"id": {
 				S: aws.String("1"),
@@ -108,38 +130,52 @@ func TestPutItem(t *testing.T) {
 func TestGetItem(t *testing.T) {
 	ddbSvc := getDDBService(t)
 
-	_, err := ddbSvc.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String("TestTable"),
-		Key: map[string]*dynamodb.AttributeValue{
-			"id": {
-				S: aws.String("1"),
+	testTableName := "TestTable"
+	_, err := ddbSvc.CreateTable(&dynamodb.CreateTableInput{
+		TableName: aws.String(testTableName),
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("id"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+			{
+				AttributeName: aws.String("value"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("id"),
+				KeyType:       aws.String(dynamodb.KeyTypeHash),
 			},
 		},
 	})
 	require.NoError(t, err)
-}
 
-func TestUpdateItem(t *testing.T) {
-	ddbSvc := getDDBService(t)
+	_, err = ddbSvc.PutItem(&dynamodb.PutItemInput{
+		TableName: aws.String(testTableName),
+		Item: map[string]*dynamodb.AttributeValue{
+			"id": {
+				S: aws.String("1"),
+			},
+			"value": {
+				S: aws.String("Test Value"),
+			},
+		},
+	})
 
-	_, err := ddbSvc.UpdateItem(&dynamodb.UpdateItemInput{
-		TableName: aws.String("TestTable"),
+	require.NoError(t, err)
+	response, err := ddbSvc.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(testTableName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"id": {
 				S: aws.String("1"),
 			},
 		},
-		UpdateExpression: aws.String("SET #V = :v"),
-		ExpressionAttributeNames: map[string]*string{
-			"#V": aws.String("value"),
-		},
-		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":v": {
-				S: aws.String("Test Value Updated"),
-			},
-		},
-		ReturnValues: aws.String("ALL_NEW"),
 	})
+	require.NotEmpty(t, response.Item)
+	require.EqualValues(t, *response.Item["id"].S, "1")
+	require.EqualValues(t, *response.Item["value"].S, "Test Value")
 	require.NoError(t, err)
 }
 
@@ -224,6 +260,7 @@ func TestBatchGet(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	testValue := "Test Value"
 	_, err = ddbSvc.BatchWriteItem(&dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]*dynamodb.WriteRequest{
 			testTableName: {
@@ -231,7 +268,7 @@ func TestBatchGet(t *testing.T) {
 					PutRequest: &dynamodb.PutRequest{
 						Item: map[string]*dynamodb.AttributeValue{
 							"id":    {S: aws.String("1")},
-							"value": {S: aws.String("test value")},
+							"value": {S: aws.String(testValue)},
 						},
 					},
 				},
@@ -240,7 +277,7 @@ func TestBatchGet(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = ddbSvc.BatchGetItem(&dynamodb.BatchGetItemInput{
+	response, err := ddbSvc.BatchGetItem(&dynamodb.BatchGetItemInput{
 		RequestItems: map[string]*dynamodb.KeysAndAttributes{
 			testTableName: {
 				ProjectionExpression: aws.String("id"),
@@ -253,6 +290,18 @@ func TestBatchGet(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
+
+	require.NotEmpty(t, response.Responses)
+	responseItems := response.Responses[testTableName]
+	require.NotEmpty(t, responseItems)
+	testItem := map[string]*dynamodb.AttributeValue{}
+	for _, item := range responseItems {
+		if *item["id"].S == "1" {
+			testItem = item
+		}
+	}
+	require.NotNil(t, testItem)
+	require.EqualValues(t, *testItem["value"].S, testValue)
 }
 
 func TestBatchDelete(t *testing.T) {
@@ -322,6 +371,6 @@ func TestBatchDelete(t *testing.T) {
 			},
 		},
 	})
-	require.Empty(t, response.Responses)
 	require.NoError(t, err)
+	require.Empty(t, response.Responses)
 }
