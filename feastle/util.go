@@ -1,6 +1,9 @@
 package feastle
 
 import (
+	"fmt"
+	"math/rand"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
@@ -12,13 +15,13 @@ type FeastFeature struct {
 	Values         map[string][]byte
 }
 
-func GenerateRandomFeature() *FeastFeature {
-	featureName := "todo"
-	randId := "todo"
-	randTs := "todo"
-	randValue1 := "todo"
-	randValue2 := "todo"
-	randValue3 := "todo"
+func GenerateRandomFeature(featureNames []string) *FeastFeature {
+	featureName := featureNames[rand.Intn(len(featureNames))]
+	randId := fmt.Sprintf("key-%d…", rand.Int()%1000)
+	randTs := fmt.Sprintf("ts-%d…", rand.Int()%1000)
+	randValue1 := fmt.Sprintf("ts-%d…", rand.Int()%1000)
+	randValue2 := fmt.Sprintf("ts-%d…", rand.Int()%1000)
+	randValue3 := fmt.Sprintf("ts-%d…", rand.Int()%1000)
 
 	return &FeastFeature{
 		FeatureName:    featureName,
@@ -47,7 +50,6 @@ func (f *FeastFeature) ddbItem() map[string]*dynamodb.AttributeValue {
 
 func NewBatchWriteItemInput(features []*FeastFeature) *dynamodb.BatchWriteItemInput {
 	requestItems := map[string][]*dynamodb.WriteRequest{}
-	// requestItems[f.FeatureName] = []*dynamodb.WriteRequest{}
 	for _, f := range features {
 		requestItems[f.FeatureName] = append(requestItems[f.FeatureName], &dynamodb.WriteRequest{
 			PutRequest: &dynamodb.PutRequest{
@@ -76,4 +78,12 @@ func NewBatchGetItemInput(features []*FeastFeature) *dynamodb.BatchGetItemInput 
 	return &dynamodb.BatchGetItemInput{
 		RequestItems: requestItems,
 	}
+}
+
+func GenerateRandomBatchWrite(tables []string, batchSize int) *dynamodb.BatchWriteItemInput {
+	randomFeatures := []*FeastFeature{}
+	for i := 0; i < batchSize; i++ {
+		randomFeatures = append(randomFeatures, GenerateRandomFeature(tables))
+	}
+	return NewBatchWriteItemInput(randomFeatures)
 }

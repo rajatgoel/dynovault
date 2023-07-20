@@ -1,24 +1,38 @@
 package feastle
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestGenerateRandomFeature(t *testing.T) {
-	feature := GenerateRandomFeature()
-	fmt.Printf("Feature: %s\n", feature)
-	require.Equal(t, feature.EntityId, "todo")
+func TestNewBatchWriteItemInput(t *testing.T) {
+	tableNames := []string{"table1", "table2"}
+	feature := GenerateRandomFeature([]string{"table1"})
+	feature1 := GenerateRandomFeature([]string{"table2"})
+	feature2 := GenerateRandomFeature([]string{"table1"})
+	input := NewBatchWriteItemInput([]*FeastFeature{feature, feature1, feature2})
+	for tableName := range input.RequestItems {
+		found := false
+		for _, t := range tableNames {
+			if t == tableName {
+				found = true
+			}
+		}
+		require.True(t, found)
+	}
 }
 
-func TestNewBatchWriteItemInput(t *testing.T) {
-	feature := GenerateRandomFeature()
-	feature1 := GenerateRandomFeature()
-	input := NewBatchWriteItemInput([]*FeastFeature{feature, feature1})
-	fmt.Printf("Feature as write input: %s\n", input)
+func TestGenerateRandomBatchWrite(t *testing.T) {
+	tableNames := []string{"table1", "table2", "table3"}
+	input := GenerateRandomBatchWrite(tableNames, 10)
 	for tableName := range input.RequestItems {
-		require.Equal(t, tableName, "todo")
+		found := false
+		for _, t := range tableNames {
+			if t == tableName {
+				found = true
+			}
+		}
+		require.True(t, found)
 	}
 }

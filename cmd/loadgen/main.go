@@ -203,7 +203,6 @@ func (l *loadgen) doBatchGetItem(ctx context.Context) error {
 		features[i] = feastle.GenerateRandomFeature()
 	}
 	batchGetItemInput := feastle.NewBatchGetItemInput(features)
-
 	_, err := l.db.BatchGetItem(batchGetItemInput)
 	if err != nil {
 		return err
