@@ -4,11 +4,14 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/rajatgoel/dynovault/feastle"
 	"log"
 	"math/rand"
+	"os"
+	"os/signal"
 	"sync"
 	"time"
+
+	"github.com/rajatgoel/dynovault/feastle"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -30,8 +33,8 @@ func main() {
 	flag.IntVar(&numTables, "num_tables", 10, "Number of tables to create")
 	flag.IntVar(&numParallelReader, "num_parallel_reader", 10, "Number of parallel readers")
 	flag.IntVar(&numParallelWriter, "num_parallel_writer", 10, "Number of parallel writers")
-
 	flag.Parse()
+
 	cfg := &aws.Config{
 		Region:      aws.String("us-east-1"),
 		Endpoint:    aws.String(endpointURL),
@@ -54,12 +57,20 @@ func main() {
 		db,
 	)
 
-	err = lg.BulkUpload(context.Background(), bulkfillDuration)
+	ctx, cancel := context.WithCancel(context.Background())
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		cancel()
+	}()
+
+	err = lg.BulkUpload(ctx, bulkfillDuration)
 	if err != nil {
 		panic(fmt.Errorf("failed to bulk upload: %s", err))
 	}
 
-	err = lg.Run(context.Background())
+	err = lg.Run(ctx)
 	if err != nil {
 		panic(fmt.Errorf("failed to run loadgen: %s", err))
 	}
@@ -99,7 +110,6 @@ func (l *loadgen) createTables(ctx context.Context, tables []string) error {
 					AttributeType: aws.String("S"),
 				},
 			},
-			// BillingMode: "PAY_PER_REQUEST",
 			KeySchema: []*dynamodb.KeySchemaElement{
 				{
 					AttributeName: aws.String("entity_id"),
@@ -174,15 +184,6 @@ func (l *loadgen) BulkUpload(ctx context.Context, duration time.Duration) error 
 
 // Run blocks until the context is cancelled.
 func (l *loadgen) Run(ctx context.Context) error {
-	var actions = []func(context.Context) error{
-		l.doBatchGetItem,
-		l.doBatchWriteItem,
-		// l.doDeleteItem,
-		// l.doDeleteTable,
-		// l.doGetItem,
-		// l.doPutItem,
-	}
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -190,11 +191,17 @@ func (l *loadgen) Run(ctx context.Context) error {
 		default:
 		}
 
-		action := actions[rand.Int()%len(actions)]
-		if err := action(ctx); err != nil {
-			fmt.Printf("failed to execute action: %s", err)
+		// 1% write, 99% get
+		switch rand.Intn(100) {
+		case 0:
+			if err := l.doBatchWriteItem(ctx); err != nil {
+				fmt.Printf("failed to write", err)
+			}
+		default:
+			if err := l.doBatchGetItem(ctx); err != nil {
+				fmt.Printf("failed to get", err)
+			}
 		}
-		time.Sleep(100 * time.Millisecond)
 	}
 }
 
