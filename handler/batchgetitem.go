@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
@@ -16,29 +15,29 @@ func BatchGetItem(
 ) (*dynamodb.BatchGetItemOutput, error) {
 	responses := map[string][]map[string]*dynamodb.AttributeValue{}
 
+	fmt.Printf("BatchGetItemInput: %s\n", input.String())
 	for tableName, requestItem := range input.RequestItems {
-		for _, expression := range strings.Split(*requestItem.ProjectionExpression, ",") {
-			// Assume the projection expression is just a comma separated list
-			// of name of the attribute names being retrieved
-			// TODO: expand to more types of expressions later
-			attributeName := strings.TrimSpace(expression)
-			key := fmt.Sprintf("%s:%s", tableName, attributeName)
+		key := tableName
+		for _, attr := range requestItem.Keys {
+			// Flatten the keys into one string
+			// TODO: ordering may mess us up here
+			for k, v := range attr {
+				key = fmt.Sprintf("%s:%s-%s", key, k, *v.S)
+			}
 			jsonValue, err := s.kv.Get(ctx, []byte(key))
 			if err != nil {
-				return nil, err
+				//return nil, err
+				continue
 			}
-			var value dynamodb.AttributeValue
+			var value map[string]*dynamodb.AttributeValue
 			if err := json.Unmarshal(jsonValue, &value); err != nil {
 				return nil, err
 			}
-			attribute := map[string]*dynamodb.AttributeValue{
-				attributeName: &value,
-			}
-			responses[tableName] = append(responses[tableName], attribute)
+			responses[tableName] = append(responses[tableName], value)
 		}
 	}
-	fmt.Println(responses)
 	return &dynamodb.BatchGetItemOutput{
-		Responses: responses,
+		Responses:       responses,
+		UnprocessedKeys: map[string]*dynamodb.KeysAndAttributes{},
 	}, nil
 }

@@ -160,13 +160,36 @@ func TestDeleteItem(t *testing.T) {
 func TestBatchWrite(t *testing.T) {
 	ddbSvc := getDDBService(t)
 
-	_, err := ddbSvc.BatchWriteItem(&dynamodb.BatchWriteItemInput{
+	testTableName := "TestTable"
+	_, err := ddbSvc.CreateTable(&dynamodb.CreateTableInput{
+		TableName: aws.String(testTableName),
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("id"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+			{
+				AttributeName: aws.String("value"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("id"),
+				KeyType:       aws.String(dynamodb.KeyTypeHash),
+			},
+		},
+	})
+
+	require.NoError(t, err)
+	_, err = ddbSvc.BatchWriteItem(&dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]*dynamodb.WriteRequest{
-			"TestTable": []*dynamodb.WriteRequest{
+			testTableName: []*dynamodb.WriteRequest{
 				&dynamodb.WriteRequest{
 					PutRequest: &dynamodb.PutRequest{
 						Item: map[string]*dynamodb.AttributeValue{
-							"id": &dynamodb.AttributeValue{S: aws.String("1")},
+							"id":    &dynamodb.AttributeValue{S: aws.String("1")},
+							"value": &dynamodb.AttributeValue{S: aws.String("test value")},
 						},
 					},
 				},
@@ -179,13 +202,36 @@ func TestBatchWrite(t *testing.T) {
 func TestBatchGet(t *testing.T) {
 	ddbSvc := getDDBService(t)
 
-	_, err := ddbSvc.BatchWriteItem(&dynamodb.BatchWriteItemInput{
+	testTableName := "TestTable"
+	_, err := ddbSvc.CreateTable(&dynamodb.CreateTableInput{
+		TableName: aws.String(testTableName),
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("id"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+			{
+				AttributeName: aws.String("value"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("id"),
+				KeyType:       aws.String(dynamodb.KeyTypeHash),
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	_, err = ddbSvc.BatchWriteItem(&dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]*dynamodb.WriteRequest{
-			"TestTable": []*dynamodb.WriteRequest{
+			testTableName: []*dynamodb.WriteRequest{
 				&dynamodb.WriteRequest{
 					PutRequest: &dynamodb.PutRequest{
 						Item: map[string]*dynamodb.AttributeValue{
-							"id": &dynamodb.AttributeValue{S: aws.String("1")},
+							"id":    &dynamodb.AttributeValue{S: aws.String("1")},
+							"value": &dynamodb.AttributeValue{S: aws.String("test value")},
 						},
 					},
 				},
@@ -196,7 +242,7 @@ func TestBatchGet(t *testing.T) {
 
 	_, err = ddbSvc.BatchGetItem(&dynamodb.BatchGetItemInput{
 		RequestItems: map[string]*dynamodb.KeysAndAttributes{
-			"TestTable": &dynamodb.KeysAndAttributes{
+			testTableName: &dynamodb.KeysAndAttributes{
 				ProjectionExpression: aws.String("id"),
 				Keys: []map[string]*dynamodb.AttributeValue{
 					map[string]*dynamodb.AttributeValue{
@@ -212,9 +258,31 @@ func TestBatchGet(t *testing.T) {
 func TestBatchDelete(t *testing.T) {
 	ddbSvc := getDDBService(t)
 
-	_, err := ddbSvc.BatchWriteItem(&dynamodb.BatchWriteItemInput{
+	testTableName := "TestTable"
+	_, err := ddbSvc.CreateTable(&dynamodb.CreateTableInput{
+		TableName: aws.String(testTableName),
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("id"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+			{
+				AttributeName: aws.String("value"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("id"),
+				KeyType:       aws.String(dynamodb.KeyTypeHash),
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	_, err = ddbSvc.BatchWriteItem(&dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]*dynamodb.WriteRequest{
-			"TestTable": []*dynamodb.WriteRequest{
+			testTableName: []*dynamodb.WriteRequest{
 				&dynamodb.WriteRequest{
 					PutRequest: &dynamodb.PutRequest{
 						Item: map[string]*dynamodb.AttributeValue{
@@ -229,7 +297,7 @@ func TestBatchDelete(t *testing.T) {
 
 	_, err = ddbSvc.BatchWriteItem(&dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]*dynamodb.WriteRequest{
-			"TestTable": []*dynamodb.WriteRequest{
+			testTableName: []*dynamodb.WriteRequest{
 				&dynamodb.WriteRequest{
 					DeleteRequest: &dynamodb.DeleteRequest{
 						Key: map[string]*dynamodb.AttributeValue{
@@ -242,9 +310,9 @@ func TestBatchDelete(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = ddbSvc.BatchGetItem(&dynamodb.BatchGetItemInput{
+	response, err := ddbSvc.BatchGetItem(&dynamodb.BatchGetItemInput{
 		RequestItems: map[string]*dynamodb.KeysAndAttributes{
-			"TestTable": &dynamodb.KeysAndAttributes{
+			testTableName: &dynamodb.KeysAndAttributes{
 				ProjectionExpression: aws.String("id"),
 				Keys: []map[string]*dynamodb.AttributeValue{
 					map[string]*dynamodb.AttributeValue{
@@ -254,5 +322,6 @@ func TestBatchDelete(t *testing.T) {
 			},
 		},
 	})
-	require.Error(t, err)
+	require.Empty(t, response.Responses)
+	require.NoError(t, err)
 }
