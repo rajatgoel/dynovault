@@ -47,7 +47,7 @@ func (f *FeastFeature) ddbItem() map[string]*dynamodb.AttributeValue {
 
 func NewBatchWriteItemInput(features []*FeastFeature) *dynamodb.BatchWriteItemInput {
 	requestItems := map[string][]*dynamodb.WriteRequest{}
-	//requestItems[f.FeatureName] = []*dynamodb.WriteRequest{}
+	// requestItems[f.FeatureName] = []*dynamodb.WriteRequest{}
 	for _, f := range features {
 		requestItems[f.FeatureName] = append(requestItems[f.FeatureName], &dynamodb.WriteRequest{
 			PutRequest: &dynamodb.PutRequest{
@@ -56,6 +56,24 @@ func NewBatchWriteItemInput(features []*FeastFeature) *dynamodb.BatchWriteItemIn
 		})
 	}
 	return &dynamodb.BatchWriteItemInput{
+		RequestItems: requestItems,
+	}
+}
+
+func NewBatchGetItemInput(features []*FeastFeature) *dynamodb.BatchGetItemInput {
+	requestItems := map[string]*dynamodb.KeysAndAttributes{}
+	for _, f := range features {
+		requestItems[f.FeatureName] = &dynamodb.KeysAndAttributes{
+			Keys: []map[string]*dynamodb.AttributeValue{
+				{
+					"entity_id": &dynamodb.AttributeValue{S: aws.String(f.EntityId)},
+					"event_ts":  &dynamodb.AttributeValue{S: aws.String(f.EventTimestamp)},
+				},
+			},
+		}
+	}
+
+	return &dynamodb.BatchGetItemInput{
 		RequestItems: requestItems,
 	}
 }

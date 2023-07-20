@@ -4,8 +4,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/rajatgoel/dynovault/feastle"
 	"log"
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -16,10 +18,10 @@ import (
 
 var (
 	endpointURL       string
-	bulkfillDuration  time.Duration = 10 * time.Second
-	numTables         int           = 5
-	numParallelReader int           = 10
-	numParallelWriter int           = 10
+	bulkfillDuration  time.Duration
+	numTables         int
+	numParallelReader int
+	numParallelWriter int
 )
 
 func main() {
@@ -52,10 +54,10 @@ func main() {
 		db,
 	)
 
-	err = lg.BulkUpload(context.Background(), bulkfillDuration)
-	if err != nil {
-		panic(fmt.Errorf("failed to bulk upload: %s", err))
-	}
+	// err = lg.BulkUpload(context.Background(), bulkfillDuration)
+	// if err != nil {
+	// 	panic(fmt.Errorf("failed to bulk upload: %s", err))
+	// }
 
 	err = lg.Run(context.Background())
 	if err != nil {
@@ -74,6 +76,9 @@ type loadgen struct {
 	param  loadgenParams
 	db     *dynamodb.DynamoDB
 	tables []string
+
+	writtenCount int
+	readCount    int
 }
 
 func newLoadgen(param loadgenParams, db *dynamodb.DynamoDB) *loadgen {
@@ -83,12 +88,10 @@ func newLoadgen(param loadgenParams, db *dynamodb.DynamoDB) *loadgen {
 	}
 }
 
-func (l *loadgen) BulkUpload(ctx context.Context, duration time.Duration) error {
-	tables := generateTableNames(l.param.numTables)
-	log.Println("Creating tables.... len(tables):", len(tables))
-
+func (l *loadgen) createTables(ctx context.Context, tables []string) error {
+	beginTime := time.Now()
 	for _, tableName := range tables {
-		output, err := l.db.CreateTable(&dynamodb.CreateTableInput{
+		_, err := l.db.CreateTable(&dynamodb.CreateTableInput{
 			TableName: aws.String(tableName),
 			AttributeDefinitions: []*dynamodb.AttributeDefinition{
 				{
@@ -108,9 +111,9 @@ func (l *loadgen) BulkUpload(ctx context.Context, duration time.Duration) error 
 			log.Println("Failed to create table", tableName, err)
 			return err
 		}
-
-		log.Println("Created table", tableName, output)
 	}
+
+	log.Println("Created tables in...", time.Since(beginTime))
 
 	for _, tableName := range tables {
 		table, err := l.db.DescribeTable(&dynamodb.DescribeTableInput{
@@ -120,14 +123,63 @@ func (l *loadgen) BulkUpload(ctx context.Context, duration time.Duration) error 
 			return err
 		}
 
-		log.Println("Table description", tableName, table)
+		if *table.Table.TableName != tableName {
+			panic(fmt.Errorf("table name mismatch... %s %s", *table.Table.TableName, tableName))
+		}
 	}
 
 	return nil
 }
 
+func (l *loadgen) BulkUpload(ctx context.Context, duration time.Duration) error {
+	tables := generateTableNames(l.param.numTables)
+	log.Println("Creating tables.... len(tables):", len(tables))
+
+	err := l.createTables(ctx, tables)
+	if err != nil {
+		return err
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(l.param.numParallelWriter)
+	var writerErr error
+	for i := 0; i < l.param.numParallelWriter; i++ {
+		go func() {
+			defer wg.Done()
+
+			timer := time.NewTimer(duration)
+			defer timer.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-timer.C:
+					return
+				default:
+				}
+				err := l.doBatchWriteItem(ctx)
+				if err != nil {
+					writerErr = err
+				}
+
+			}
+		}()
+	}
+	wg.Wait()
+
+	return writerErr
+}
+
 // Run blocks until the context is cancelled.
 func (l *loadgen) Run(ctx context.Context) error {
+	var actions = []func(context.Context) error{
+		l.doBatchGetItem,
+		l.doBatchWriteItem,
+		// l.doDeleteItem,
+		// l.doDeleteTable,
+		// l.doGetItem,
+		// l.doPutItem,
+	}
 
 	for {
 		select {
@@ -137,66 +189,74 @@ func (l *loadgen) Run(ctx context.Context) error {
 		}
 
 		action := actions[rand.Int()%len(actions)]
-		if err := action(ctx, l.db); err != nil {
+		if err := action(ctx); err != nil {
 			fmt.Printf("failed to execute action: %s", err)
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
 }
 
-var actions = []func(context.Context, *dynamodb.DynamoDB) error{
-	doBatchGetItem,
-	doBatchWriteItem,
-	// doCreateTable,
-	// doDeleteItem,
-	// doDeleteTable,
-	// doDescribeTable,
-	// doGetItem,
-	// doPutItem,
-}
+func (l *loadgen) doBatchGetItem(ctx context.Context) error {
+	numFeatures := rand.Int() % 100
+	features := make([]*feastle.FeastFeature, numFeatures)
+	for i := 0; i < numFeatures; i++ {
+		features[i] = feastle.GenerateRandomFeature()
+	}
+	batchGetItemInput := feastle.NewBatchGetItemInput(features)
 
-func doBatchGetItem(ctx context.Context, db *dynamodb.DynamoDB) error {
-	output, err := db.BatchGetItem(&dynamodb.BatchGetItemInput{
-		RequestItems: map[string]*dynamodb.KeysAndAttributes{
-			"test": {
-				Keys: []map[string]*dynamodb.AttributeValue{
-					{
-						"id": {
-							S: aws.String("1"),
-						},
-					},
-				},
-			},
-		},
-	})
-	fmt.Println(output, err)
-	return nil
-}
-func doBatchWriteItem(ctx context.Context, db *dynamodb.DynamoDB) error {
+	_, err := l.db.BatchGetItem(batchGetItemInput)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func doCreateTable(ctx context.Context, db *dynamodb.DynamoDB) error {
+func (l *loadgen) doBatchWriteItem(ctx context.Context) error {
+	numFeatures := rand.Int() % 100
+	features := make([]*feastle.FeastFeature, numFeatures)
+	for i := 0; i < numFeatures; i++ {
+		features[i] = feastle.GenerateRandomFeature()
+	}
+	batchWriteItemInput := feastle.NewBatchWriteItemInput(features)
+	_, err := l.db.BatchWriteItem(batchWriteItemInput)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func doDeleteItem(ctx context.Context, db *dynamodb.DynamoDB) error {
+func (l *loadgen) doDeleteItem(ctx context.Context) error {
+	deleteItemInput := &dynamodb.DeleteItemInput{}
+
+	_, err := l.db.DeleteItem(deleteItemInput)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func doDeleteTable(ctx context.Context, db *dynamodb.DynamoDB) error {
+func (l *loadgen) doDeleteTable(ctx context.Context) error {
+	// todo
 	return nil
 }
 
-func doDescribeTable(ctx context.Context, db *dynamodb.DynamoDB) error {
+func (l *loadgen) doGetItem(ctx context.Context) error {
+	getItemInput := &dynamodb.GetItemInput{}
+
+	_, err := l.db.GetItem(getItemInput)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func doGetItem(ctx context.Context, db *dynamodb.DynamoDB) error {
-	return nil
-}
+func (l *loadgen) doPutItem(ctx context.Context) error {
+	putItemInput := &dynamodb.PutItemInput{}
 
-func doPutItem(ctx context.Context, db *dynamodb.DynamoDB) error {
+	_, err := l.db.PutItem(putItemInput)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -204,7 +264,6 @@ func generateTableNames(numTables int) []string {
 	tableNames := make([]string, 0, numTables)
 	for i := 0; i < numTables; i++ {
 		tableNames = append(tableNames, fmt.Sprintf("feastle.driver_hourly_stats.%d", i))
-
 	}
 	return tableNames
 }
