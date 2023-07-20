@@ -31,6 +31,9 @@ func BatchWriteItem(
 				describeTableOutput, err := DescribeTable(ctx, s, &dynamodb.DescribeTableInput{
 					TableName: aws.String(tableName),
 				})
+				if err != nil {
+					return nil, err
+				}
 				for keyName, keyValue := range writeRequest.PutRequest.Item {
 					for _, keySchemaElement := range describeTableOutput.Table.KeySchema {
 						if keyName == *keySchemaElement.AttributeName {
