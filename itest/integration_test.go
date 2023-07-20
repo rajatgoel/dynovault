@@ -182,7 +182,55 @@ func TestGetItem(t *testing.T) {
 func TestDeleteItem(t *testing.T) {
 	ddbSvc := getDDBService(t)
 
-	_, err := ddbSvc.DeleteItem(&dynamodb.DeleteItemInput{
+	testTableName := "TestTable"
+	_, err := ddbSvc.CreateTable(&dynamodb.CreateTableInput{
+		TableName: aws.String(testTableName),
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("id"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+			{
+				AttributeName: aws.String("value"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("id"),
+				KeyType:       aws.String(dynamodb.KeyTypeHash),
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	_, err = ddbSvc.PutItem(&dynamodb.PutItemInput{
+		TableName: aws.String(testTableName),
+		Item: map[string]*dynamodb.AttributeValue{
+			"id": {
+				S: aws.String("1"),
+			},
+			"value": {
+				S: aws.String("Test Value"),
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	response, err := ddbSvc.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(testTableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"id": {
+				S: aws.String("1"),
+			},
+		},
+	})
+	require.NotEmpty(t, response.Item)
+	require.EqualValues(t, *response.Item["id"].S, "1")
+	require.EqualValues(t, *response.Item["value"].S, "Test Value")
+	require.NoError(t, err)
+
+	_, err = ddbSvc.DeleteItem(&dynamodb.DeleteItemInput{
 		TableName: aws.String("TestTable"),
 		Key: map[string]*dynamodb.AttributeValue{
 			"id": {
@@ -190,6 +238,17 @@ func TestDeleteItem(t *testing.T) {
 			},
 		},
 	})
+	require.NoError(t, err)
+
+	response, err = ddbSvc.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(testTableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"id": {
+				S: aws.String("1"),
+			},
+		},
+	})
+	require.Empty(t, response.Item)
 	require.NoError(t, err)
 }
 
