@@ -36,3 +36,17 @@ func TestGenerateRandomBatchWrite(t *testing.T) {
 		require.True(t, found)
 	}
 }
+
+func TestGenerateRandomBatchWriteDelete(t *testing.T) {
+	tableNames := []string{"table1", "table2", "table3"}
+	input := GenerateRandomBatchWriteDelete(tableNames, 10)
+	for tableName := range input.RequestItems {
+		found := false
+		for _, t := range tableNames {
+			if t == tableName {
+				found = true
+			}
+		}
+		require.True(t, found)
+	}
+}

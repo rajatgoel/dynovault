@@ -62,6 +62,22 @@ func NewBatchWriteItemInput(features []*FeastFeature) *dynamodb.BatchWriteItemIn
 	}
 }
 
+func NewBatchWriteItemInputDelete(features []*FeastFeature) *dynamodb.BatchWriteItemInput {
+	requestItems := map[string][]*dynamodb.WriteRequest{}
+	for _, f := range features {
+		requestItems[f.FeatureName] = append(requestItems[f.FeatureName], &dynamodb.WriteRequest{
+			DeleteRequest: &dynamodb.DeleteRequest{
+				Key: map[string]*dynamodb.AttributeValue{
+					"entity_id": {S: aws.String(f.EntityId)},
+				},
+			},
+		})
+	}
+	return &dynamodb.BatchWriteItemInput{
+		RequestItems: requestItems,
+	}
+}
+
 func NewBatchGetItemInput(features []*FeastFeature) *dynamodb.BatchGetItemInput {
 	requestItems := map[string]*dynamodb.KeysAndAttributes{}
 	for _, f := range features {
@@ -69,7 +85,6 @@ func NewBatchGetItemInput(features []*FeastFeature) *dynamodb.BatchGetItemInput 
 			Keys: []map[string]*dynamodb.AttributeValue{
 				{
 					"entity_id": &dynamodb.AttributeValue{S: aws.String(f.EntityId)},
-					"event_ts":  &dynamodb.AttributeValue{S: aws.String(f.EventTimestamp)},
 				},
 			},
 		}
@@ -86,4 +101,12 @@ func GenerateRandomBatchWrite(tables []string, batchSize int) *dynamodb.BatchWri
 		randomFeatures = append(randomFeatures, GenerateRandomFeature(tables))
 	}
 	return NewBatchWriteItemInput(randomFeatures)
+}
+
+func GenerateRandomBatchWriteDelete(tables []string, batchSize int) *dynamodb.BatchWriteItemInput {
+	randomFeatures := []*FeastFeature{}
+	for i := 0; i < batchSize; i++ {
+		randomFeatures = append(randomFeatures, GenerateRandomFeature(tables))
+	}
+	return NewBatchWriteItemInputDelete(randomFeatures)
 }
