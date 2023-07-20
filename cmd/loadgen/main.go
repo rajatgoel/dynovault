@@ -59,7 +59,7 @@ func (l *loadgen) Run(ctx context.Context) error {
 	}
 }
 
-var actions = []func(context.Context, dynamodb.DynamoDB) error{
+var actions = []func(context.Context, *dynamodb.DynamoDB) error{
 	doBatchGetItem,
 	doBatchWriteItem,
 	doCreateTable,
@@ -70,34 +70,34 @@ var actions = []func(context.Context, dynamodb.DynamoDB) error{
 	doPutItem,
 }
 
-func doBatchGetItem(ctx context.Context, db dynamodb.DynamoDB) error {
+func doBatchGetItem(ctx context.Context, db *dynamodb.DynamoDB) error {
 	return nil
 }
 
-func doBatchWriteItem(ctx context.Context, db dynamodb.DynamoDB) error {
+func doBatchWriteItem(ctx context.Context, db *dynamodb.DynamoDB) error {
 	return nil
 }
 
-func doCreateTable(ctx context.Context, db dynamodb.DynamoDB) error {
+func doCreateTable(ctx context.Context, db *dynamodb.DynamoDB) error {
 	return nil
 }
 
-func doDeleteItem(ctx context.Context, db dynamodb.DynamoDB) error {
+func doDeleteItem(ctx context.Context, db *dynamodb.DynamoDB) error {
 	return nil
 }
 
-func doDeleteTable(ctx context.Context, db dynamodb.DynamoDB) error {
+func doDeleteTable(ctx context.Context, db *dynamodb.DynamoDB) error {
 	return nil
 }
 
-func doDescribeTable(ctx context.Context, db dynamodb.DynamoDB) error {
+func doDescribeTable(ctx context.Context, db *dynamodb.DynamoDB) error {
 	return nil
 }
 
-func doGetItem(ctx context.Context, db dynamodb.DynamoDB) error {
+func doGetItem(ctx context.Context, db *dynamodb.DynamoDB) error {
 	return nil
 }
 
-func doPutItem(ctx context.Context, db dynamodb.DynamoDB) error {
+func doPutItem(ctx context.Context, db *dynamodb.DynamoDB) error {
 	return nil
 }
