@@ -243,26 +243,6 @@ func (l *loadgen) doDeleteTable(ctx context.Context) error {
 	return nil
 }
 
-func (l *loadgen) doGetItem(ctx context.Context) error {
-	getItemInput := &dynamodb.GetItemInput{}
-
-	_, err := l.db.GetItem(getItemInput)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (l *loadgen) doPutItem(ctx context.Context) error {
-	putItemInput := &dynamodb.PutItemInput{}
-
-	_, err := l.db.PutItem(putItemInput)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func generateTableNames(numTables int) []string {
 	tableNames := make([]string, 0, numTables)
 	for i := 0; i < numTables; i++ {
