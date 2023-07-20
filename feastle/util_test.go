@@ -15,9 +15,10 @@ func TestGenerateRandomFeature(t *testing.T) {
 
 func TestNewBatchWriteItemInput(t *testing.T) {
 	feature := GenerateRandomFeature()
-	input := NewBatchWriteItemInput("TestTable", feature)
+	feature1 := GenerateRandomFeature()
+	input := NewBatchWriteItemInput([]*FeastFeature{feature, feature1})
 	fmt.Printf("Feature as write input: %s\n", input)
 	for tableName := range input.RequestItems {
-		require.Equal(t, tableName, "TestTable")
+		require.Equal(t, tableName, "todo")
 	}
 }

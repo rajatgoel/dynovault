@@ -45,16 +45,17 @@ func (f *FeastFeature) ddbItem() map[string]*dynamodb.AttributeValue {
 	return item
 }
 
-func NewBatchWriteItemInput(tableName string, feature *FeastFeature) *dynamodb.BatchWriteItemInput {
-	return &dynamodb.BatchWriteItemInput{
-		RequestItems: map[string][]*dynamodb.WriteRequest{
-			tableName: {
-				{
-					PutRequest: &dynamodb.PutRequest{
-						Item: feature.ddbItem(),
-					},
-				},
+func NewBatchWriteItemInput(features []*FeastFeature) *dynamodb.BatchWriteItemInput {
+	requestItems := map[string][]*dynamodb.WriteRequest{}
+	//requestItems[f.FeatureName] = []*dynamodb.WriteRequest{}
+	for _, f := range features {
+		requestItems[f.FeatureName] = append(requestItems[f.FeatureName], &dynamodb.WriteRequest{
+			PutRequest: &dynamodb.PutRequest{
+				Item: f.ddbItem(),
 			},
-		},
+		})
+	}
+	return &dynamodb.BatchWriteItemInput{
+		RequestItems: requestItems,
 	}
 }
