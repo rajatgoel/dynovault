@@ -212,11 +212,10 @@ func (l *loadgen) doBatchGetItem(ctx context.Context) error {
 		features[i] = feastle.GenerateRandomFeature(l.tables)
 	}
 	batchGetItemInput := feastle.NewBatchGetItemInput(features)
-	out, err := l.db.BatchGetItemWithContext(ctx, batchGetItemInput)
+	_, err := l.db.BatchGetItemWithContext(ctx, batchGetItemInput)
 	if err != nil {
 		return err
 	}
-	log.Println("BatchGetItem output:", out)
 	return nil
 }
 
@@ -227,11 +226,10 @@ func (l *loadgen) doBatchWriteItem(ctx context.Context) error {
 		features[i] = feastle.GenerateRandomFeature(l.tables)
 	}
 	batchWriteItemInput := feastle.NewBatchWriteItemInput(features)
-	out, err := l.db.BatchWriteItemWithContext(ctx, batchWriteItemInput)
+	_, err := l.db.BatchWriteItemWithContext(ctx, batchWriteItemInput)
 	if err != nil {
 		return err
 	}
-	log.Println("BatchWriteItem output:", out)
 	return nil
 }
 
