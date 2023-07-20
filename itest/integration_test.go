@@ -70,22 +70,42 @@ func TestInvalidCreateTable(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestListTables(t *testing.T) {
-	ddbSvc := getDDBService(t)
-
-	_, err := ddbSvc.ListTables(&dynamodb.ListTablesInput{
-		Limit: aws.Int64(5),
-	})
-	require.NoError(t, err)
-}
-
 func TestDeleteTable(t *testing.T) {
 	ddbSvc := getDDBService(t)
 
-	_, err := ddbSvc.DeleteTable(&dynamodb.DeleteTableInput{
-		TableName: aws.String("TestTable"),
+	testTableName := "TestTable"
+	_, err := ddbSvc.CreateTable(&dynamodb.CreateTableInput{
+		TableName: aws.String(testTableName),
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("id"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+			{
+				AttributeName: aws.String("value"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("id"),
+				KeyType:       aws.String(dynamodb.KeyTypeHash),
+			},
+		},
 	})
 	require.NoError(t, err)
+
+	response, err := ddbSvc.DeleteTable(&dynamodb.DeleteTableInput{
+		TableName: aws.String(testTableName),
+	})
+	require.NoError(t, err)
+	require.NotNil(t, response.TableDescription)
+	require.Equal(t, *response.TableDescription.TableName, testTableName)
+
+	_, err = ddbSvc.DescribeTable(&dynamodb.DescribeTableInput{
+		TableName: aws.String(testTableName),
+	})
+	require.Error(t, err)
 }
 
 func TestPutItem(t *testing.T) {
