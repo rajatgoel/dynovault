@@ -200,8 +200,7 @@ func (l *loadgen) doBatchGetItem(ctx context.Context) error {
 	numFeatures := rand.Int() % 100
 	features := make([]*feastle.FeastFeature, numFeatures)
 	for i := 0; i < numFeatures; i++ {
-		features[i] = feastle.GenerateRandomFeature()
-		
+		features[i] = feastle.GenerateRandomFeature(l.tables)
 	}
 	batchGetItemInput := feastle.NewBatchGetItemInput(features)
 	_, err := l.db.BatchGetItem(batchGetItemInput)
@@ -215,7 +214,7 @@ func (l *loadgen) doBatchWriteItem(ctx context.Context) error {
 	numFeatures := rand.Int() % 100
 	features := make([]*feastle.FeastFeature, numFeatures)
 	for i := 0; i < numFeatures; i++ {
-		features[i] = feastle.GenerateRandomFeature()
+		features[i] = feastle.GenerateRandomFeature(l.tables)
 	}
 	batchWriteItemInput := feastle.NewBatchWriteItemInput(features)
 	_, err := l.db.BatchWriteItem(batchWriteItemInput)
