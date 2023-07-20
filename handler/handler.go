@@ -43,8 +43,6 @@ func (d *ddbHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	switch target {
 	case "DynamoDB_20120810.CreateTable":
 		handle(writer, request, d.s, CreateTable)
-	case "DynamoDB_20120810.ListTables":
-		handle(writer, request, d.s, ListTables)
 	case "DynamoDB_20120810.DeleteTable":
 		handle(writer, request, d.s, DeleteTable)
 	case "DynamoDB_20120810.PutItem":
