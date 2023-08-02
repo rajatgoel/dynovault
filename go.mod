@@ -3,7 +3,7 @@ module github.com/rajatgoel/dynovault
 go 1.20
 
 require (
-	github.com/aws/aws-sdk-go v1.44.45
+	github.com/aws/aws-sdk-go v1.44.315
 	github.com/gorilla/handlers v1.5.1
 	github.com/lithammer/shortuuid/v4 v4.0.0
 	github.com/stretchr/testify v1.8.4
