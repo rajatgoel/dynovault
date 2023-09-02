@@ -87,9 +87,6 @@ type loadgen struct {
 	param  loadgenParams
 	db     *dynamodb.DynamoDB
 	tables []string
-
-	writtenCount int
-	readCount    int
 }
 
 func newLoadgen(param loadgenParams, db *dynamodb.DynamoDB) *loadgen {
