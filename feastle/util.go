@@ -41,9 +41,9 @@ func (f *FeastFeature) ddbItem() map[string]*dynamodb.AttributeValue {
 		values[k] = &dynamodb.AttributeValue{B: v}
 	}
 	item := map[string]*dynamodb.AttributeValue{
-		"entity_id": &dynamodb.AttributeValue{S: aws.String(f.EntityId)},
-		"event_ts":  &dynamodb.AttributeValue{S: aws.String(f.EventTimestamp)},
-		"values":    &dynamodb.AttributeValue{M: values},
+		"entity_id": {S: aws.String(f.EntityId)},
+		"event_ts":  {S: aws.String(f.EventTimestamp)},
+		"values":    {M: values},
 	}
 	return item
 }
