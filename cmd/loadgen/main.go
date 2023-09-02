@@ -266,16 +266,6 @@ func (l *loadgen) doBatchWriteItem(ctx context.Context) error {
 	return nil
 }
 
-func (l *loadgen) doDeleteItem(ctx context.Context) error {
-	deleteItemInput := &dynamodb.DeleteItemInput{}
-
-	_, err := l.db.DeleteItemWithContext(ctx, deleteItemInput)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func generateTableNames(numTables int) []string {
 	tableNames := make([]string, 0, numTables)
 	for i := 0; i < numTables; i++ {
