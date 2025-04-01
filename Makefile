@@ -2,7 +2,7 @@ export AWS_ACCESS_KEY_ID := "id"
 export AWS_SECRET_ACCESS_KEY := "key"
 
 feastle/venv:
-	python3.11 -m venv feastle/venv
+	python3.12 -m venv feastle/venv
 	. feastle/venv/bin/activate; pip install -r feastle/requirements.txt
 
 feastle/test_repo: feastle/venv
