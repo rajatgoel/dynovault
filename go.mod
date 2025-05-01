@@ -5,7 +5,7 @@ go 1.24.1
 require (
 	github.com/aws/aws-sdk-go v1.55.6
 	github.com/gorilla/handlers v1.5.2
-	github.com/lithammer/shortuuid/v4 v4.1.0
+	github.com/lithammer/shortuuid/v4 v4.2.0
 	github.com/stretchr/testify v1.10.0
 	github.com/valyala/histogram v1.2.0
 )
